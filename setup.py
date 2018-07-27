@@ -1,6 +1,6 @@
 from setuptools import setup
 
-__version__ = ['0.0']
+__version__ = ['0.1']
 
 setup(name='torchzoo',
       version='.'.join(__version__),
@@ -9,6 +9,5 @@ setup(name='torchzoo',
       author='Arjoonn Sharma',
       author_email='arjoonn.94@gmail.com',
       packages=['torchzoo'],
-      install_requires=['pytorch'],
       keywords=['torchzoo', 'pytorch', 'paper implementation'],
       zip_safe=False)
