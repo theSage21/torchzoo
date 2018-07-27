@@ -2,13 +2,13 @@ from setuptools import setup
 
 __version__ = ['0.0']
 
-setup(name='wildfire',
+setup(name='torchzoo',
       version='.'.join(__version__),
       description='Various Implementations of neural models defined in papers',
-      url='http://gitlab.com/theSage21/wildfire',
+      url='http://gitlab.com/theSage21/torchzoo',
       author='Arjoonn Sharma',
       author_email='arjoonn.94@gmail.com',
-      packages=['wildfire'],
+      packages=['torchzoo'],
       install_requires=['pytorch'],
-      keywords=['wildfire', 'pytorch', 'paper implementation'],
+      keywords=['torchzoo', 'pytorch', 'paper implementation'],
       zip_safe=False)

@@ -1,10 +1,13 @@
-WildFire
+TorchZoo
 ========
 
 Implementations of various NNs in pytorch
 
 
 ```python
-from wildfire.simple import FeedForward
-from wildfire.rnn import RWA
+# simple models
+from torchzoo import FeedForward
+
+# recurrent models
+from torchzoo import RWA
 ```
