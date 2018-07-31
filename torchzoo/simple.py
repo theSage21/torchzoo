@@ -25,3 +25,16 @@ class FeedForward(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
+
+
+class COOL(nn.Module):
+    """
+    Competitive Overcomplete Output Layer
+    https://arxiv.org/pdf/1609.02226.pdf
+    """
+    def __init__(self, inp_dim, n_classes, doo):
+        super().__init__()
+        self.layer = nn.Linear(inp_dim, n_classes * doo)
+
+    def forward(self, x):
+        return nn.Softmax(dim=-1)(self.layer(x))
