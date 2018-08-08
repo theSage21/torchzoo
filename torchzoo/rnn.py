@@ -54,3 +54,41 @@ class RWA(nn.Module):
             last_a_max = a_max
             outputs.append(last_h)
         return torch.stack(outputs, dim=1)
+
+
+class CorefGRU(nn.Module):
+    def __init__(self, inp_dim, out_dim):
+        super().__init__()
+        self.inp_dim = inp_dim
+        self.out_dim = out_dim
+        self.w_r = nn.Linear(inp_dim, out_dim)
+        self.u_r = nn.Linear(out_dim, out_dim, bias=False)
+        self.w_z = nn.Linear(inp_dim, out_dim)
+        self.u_z = nn.Linear(out_dim, out_dim, bias=False)
+        self.w_h = nn.Linear(inp_dim, out_dim)
+        self.u_h = nn.Linear(out_dim, out_dim, bias=False)
+        self.k1k2 = nn.Linear(inp_dim, 2, bias=False)
+
+    def forward(self, x, cor):
+        B, L, _ = x.size()
+        hid_states = [torch.zeros((B, self.out_dim))]
+        for t in range(L):
+            # ---------- xt, h_tm1, h_y
+            xt = x[:, t]
+            h_tm1 = hid_states[-1]
+            h_y = torch.stack([hid_states[i if i > 0 else -1][idx]
+                               for idx, i in enumerate(cor[:, t])])
+            # ---------- a calculation
+            m_t1 = h_tm1[:, :self.out_dim//2]
+            m_t2 = h_y[:, self.out_dim//2:]
+            a = torch.unsqueeze(nn.Softmax(dim=1)(self.k1k2(xt))[:, 0],
+                                dim=1)
+            m_t = torch.cat([a * m_t1, (1 - a) * m_t2], dim=1)
+            # ---------- equations
+            r_t = nn.Sigmoid()(self.w_r(xt) + self.u_r(m_t))
+            z_t = nn.Sigmoid()(self.w_z(xt) + self.u_z(m_t))
+            h_ = nn.Tanh()(self.w_h(xt) + r_t * self.u_h(m_t))
+            h = (1 - z_t) * m_t + z_t * h_
+            # ---------- done
+            hid_states.append(h)
+        return torch.stack(hid_states[1:], dim=1)
