@@ -18,6 +18,8 @@ class RWA(nn.Module):
         self._g = nn.Linear(input_dim+output_dim, output_dim)
         self._a = nn.Linear(input_dim+output_dim, output_dim, bias=False)
         self.s0 = nn.parameter.Parameter(torch.Tensor(output_dim,))
+        self.zero = torch.Tensor([0]*output_dim)
+        self.one = torch.Tensor([1]*output_dim)
         # ----------- initialize weights
         self.s0 = nn.init.normal_(self.s0, 0, 1)
         self._u.bias.data.fill_(0)
@@ -29,6 +31,9 @@ class RWA(nn.Module):
         self._g.weight.data = nn.init.uniform_(self._g.weight.data, low, high)
         self._a.weight.data = nn.init.uniform_(self._a.weight.data, low, high)
 
+        self.register_buffer('zero_', self.zero)
+        self.register_buffer('one_', self.one)
+
     def forward(self, x, shape_mode='blc'):
         if shape_mode == 'bcl':
             x = x.permute(0, 2, 1)  # BLC
@@ -39,9 +44,9 @@ class RWA(nn.Module):
         s0 = torch.stack([self.s0]*x.size()[0], dim=0)
         # ------------keep track of these
         last_h = F.tanh(s0)
-        numerator = torch.zeros((x.size()[0], self.output_dim))
-        denominator = torch.zeros((x.size()[0], self.output_dim))
-        last_a_max = torch.ones((x.size()[0], self.output_dim)) * 1e-38
+        numerator = torch.stack([self.zero_]*x.size()[0], dim=0)
+        denominator = torch.stack([self.zero_]*x.size()[0], dim=0)
+        last_a_max = torch.stack([self.one_]*x.size()[0], dim=0) * 1e-38
         # ------------initialization done
         U = self._u(x)
         outputs = []
@@ -76,6 +81,9 @@ class CorefGRU(nn.Module):
         self.u_h = nn.Linear(out_dim, out_dim, bias=False)
         self.k1k2 = nn.Linear(inp_dim, 2, bias=False)
 
+        self.zero = torch.Tensor([0]*self.out_dim)
+        self.register_buffer('zero_', self.zero)
+
     def forward(self, x, cor, shape_mode='blc'):
         if shape_mode == 'bcl':
             x = x.permute(0, 2, 1)  # BLC
@@ -84,7 +92,7 @@ class CorefGRU(nn.Module):
         else:
             raise Exception('shape_mode should be "blc" or "bcl"')
         B, L, _ = x.size()
-        hid_states = [torch.zeros((B, self.out_dim))]
+        hid_states = [torch.stack([self.zero_]*B, dim=0)]
         for t in range(L):
             # ---------- xt, h_tm1, h_y
             xt = x[:, t]
