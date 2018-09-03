@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class RWA(nn.Module):
@@ -28,10 +29,16 @@ class RWA(nn.Module):
         self._g.weight.data = nn.init.uniform_(self._g.weight.data, low, high)
         self._a.weight.data = nn.init.uniform_(self._a.weight.data, low, high)
 
-    def forward(self, x):
+    def forward(self, x, shape_mode='bcl'):
+        if shape_mode == 'bcl':
+            x = x.permute(0, 2, 1)  # BLC
+        elif shape_mode == 'blc':
+            pass  # All ok
+        else:
+            raise Exception('shape_mode should be "blc" or "bcl"')
         s0 = torch.stack([self.s0]*x.size()[0], dim=0)
         # ------------keep track of these
-        last_h = nn.Tanh()(s0)
+        last_h = F.tanh(s0)
         numerator = torch.zeros((x.size()[0], self.output_dim))
         denominator = torch.zeros((x.size()[0], self.output_dim))
         last_a_max = torch.ones((x.size()[0], self.output_dim)) * 1e-38
@@ -43,7 +50,7 @@ class RWA(nn.Module):
             ui = U[:, idx, :]
             xh = torch.cat([xi, last_h], dim=1)
             # ----- calculate Z and A
-            z = ui * nn.Tanh()(self._g(xh))
+            z = ui * F.tanh(self._g(xh))
             a = self._a(xh)
             a_max, _ = torch.max(torch.stack([a, last_a_max], dim=1), dim=1)
             # ----- calculate  num and den
@@ -69,7 +76,13 @@ class CorefGRU(nn.Module):
         self.u_h = nn.Linear(out_dim, out_dim, bias=False)
         self.k1k2 = nn.Linear(inp_dim, 2, bias=False)
 
-    def forward(self, x, cor):
+    def forward(self, x, cor, shape_mode='bcl'):
+        if shape_mode == 'bcl':
+            x = x.permute(0, 2, 1)  # BLC
+        elif shape_mode == 'blc':
+            pass  # All ok
+        else:
+            raise Exception('shape_mode should be "blc" or "bcl"')
         B, L, _ = x.size()
         hid_states = [torch.zeros((B, self.out_dim))]
         for t in range(L):
@@ -81,13 +94,13 @@ class CorefGRU(nn.Module):
             # ---------- a calculation
             m_t1 = h_tm1[:, :self.out_dim//2]
             m_t2 = h_y[:, self.out_dim//2:]
-            a = torch.unsqueeze(nn.Softmax(dim=1)(self.k1k2(xt))[:, 0],
+            a = torch.unsqueeze(F.softmax(self.k1k2(xt), dim=1)[:, 0],
                                 dim=1)
             m_t = torch.cat([a * m_t1, (1 - a) * m_t2], dim=1)
             # ---------- equations
-            r_t = nn.Sigmoid()(self.w_r(xt) + self.u_r(m_t))
-            z_t = nn.Sigmoid()(self.w_z(xt) + self.u_z(m_t))
-            h_ = nn.Tanh()(self.w_h(xt) + r_t * self.u_h(m_t))
+            r_t = F.sigmoid(self.w_r(xt) + self.u_r(m_t))
+            z_t = F.sigmoid(self.w_z(xt) + self.u_z(m_t))
+            h_ = F.tanh(self.w_h(xt) + r_t * self.u_h(m_t))
             h = (1 - z_t) * m_t + z_t * h_
             # ---------- done
             hid_states.append(h)

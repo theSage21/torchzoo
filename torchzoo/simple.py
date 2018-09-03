@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class FeedForward(nn.Module):
@@ -37,4 +38,4 @@ class COOL(nn.Module):
         self.layer = nn.Linear(inp_dim, n_classes * doo)
 
     def forward(self, x):
-        return nn.Softmax(dim=-1)(self.layer(x))
+        return F.softmax(self.layer(x), dim=-1)
