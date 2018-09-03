@@ -29,7 +29,7 @@ class RWA(nn.Module):
         self._g.weight.data = nn.init.uniform_(self._g.weight.data, low, high)
         self._a.weight.data = nn.init.uniform_(self._a.weight.data, low, high)
 
-    def forward(self, x, shape_mode='bcl'):
+    def forward(self, x, shape_mode='blc'):
         if shape_mode == 'bcl':
             x = x.permute(0, 2, 1)  # BLC
         elif shape_mode == 'blc':
@@ -76,7 +76,7 @@ class CorefGRU(nn.Module):
         self.u_h = nn.Linear(out_dim, out_dim, bias=False)
         self.k1k2 = nn.Linear(inp_dim, 2, bias=False)
 
-    def forward(self, x, cor, shape_mode='bcl'):
+    def forward(self, x, cor, shape_mode='blc'):
         if shape_mode == 'bcl':
             x = x.permute(0, 2, 1)  # BLC
         elif shape_mode == 'blc':

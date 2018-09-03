@@ -1,6 +1,6 @@
 from setuptools import setup
 
-__version__ = ['0.22']
+__version__ = ['0.23']
 
 setup(name='torchzoo',
       version='.'.join(__version__),
