@@ -43,7 +43,7 @@ class RWA(nn.Module):
             raise Exception('shape_mode should be "blc" or "bcl"')
         s0 = torch.stack([self.s0]*x.size()[0], dim=0)
         # ------------keep track of these
-        last_h = F.tanh(s0)
+        last_h = torch.tanh(s0)
         numerator = torch.stack([self.zero_]*x.size()[0], dim=0)
         denominator = torch.stack([self.zero_]*x.size()[0], dim=0)
         last_a_max = torch.stack([self.one_]*x.size()[0], dim=0) * 1e-38
@@ -55,7 +55,7 @@ class RWA(nn.Module):
             ui = U[:, idx, :]
             xh = torch.cat([xi, last_h], dim=1)
             # ----- calculate Z and A
-            z = ui * F.tanh(self._g(xh))
+            z = ui * torch.tanh(self._g(xh))
             a = self._a(xh)
             a_max, _ = torch.max(torch.stack([a, last_a_max], dim=1), dim=1)
             # ----- calculate  num and den
@@ -106,9 +106,9 @@ class CorefGRU(nn.Module):
                                 dim=1)
             m_t = torch.cat([a * m_t1, (1 - a) * m_t2], dim=1)
             # ---------- equations
-            r_t = F.sigmoid(self.w_r(xt) + self.u_r(m_t))
-            z_t = F.sigmoid(self.w_z(xt) + self.u_z(m_t))
-            h_ = F.tanh(self.w_h(xt) + r_t * self.u_h(m_t))
+            r_t = torch.sigmoid(self.w_r(xt) + self.u_r(m_t))
+            z_t = torch.sigmoid(self.w_z(xt) + self.u_z(m_t))
+            h_ = torch.tanh(self.w_h(xt) + r_t * self.u_h(m_t))
             h = (1 - z_t) * m_t + z_t * h_
             # ---------- done
             hid_states.append(h)
